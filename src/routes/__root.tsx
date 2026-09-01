@@ -117,7 +117,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning className="font-sans bg-[#fdfcfb] text-stone-900 min-h-screen">
         {children}
         <Scripts />
       </body>
