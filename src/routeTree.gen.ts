@@ -10,33 +10,167 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AkunRouteImport } from './routes/akun'
+import { Route as DaftarRouteImport } from './routes/daftar'
+import { Route as KebijakanPrivasiRouteImport } from './routes/kebijakan-privasi'
+import { Route as LiveChatRouteImport } from './routes/live-chat'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as SyaratKetentuanRouteImport } from './routes/syarat-ketentuan'
+import { Route as TransaksiRouteImport } from './routes/transaksi'
+import { Route as ApiBukuRouteImport } from './routes/api/buku'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AkunRoute = AkunRouteImport.update({
+  id: '/akun',
+  path: '/akun',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DaftarRoute = DaftarRouteImport.update({
+  id: '/daftar',
+  path: '/daftar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KebijakanPrivasiRoute = KebijakanPrivasiRouteImport.update({
+  id: '/kebijakan-privasi',
+  path: '/kebijakan-privasi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveChatRoute = LiveChatRouteImport.update({
+  id: '/live-chat',
+  path: '/live-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SyaratKetentuanRoute = SyaratKetentuanRouteImport.update({
+  id: '/syarat-ketentuan',
+  path: '/syarat-ketentuan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransaksiRoute = TransaksiRouteImport.update({
+  id: '/transaksi',
+  path: '/transaksi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBukuRoute = ApiBukuRouteImport.update({
+  id: '/api/buku',
+  path: '/api/buku',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/akun': typeof AkunRoute
+  '/daftar': typeof DaftarRoute
+  '/kebijakan-privasi': typeof KebijakanPrivasiRoute
+  '/live-chat': typeof LiveChatRoute
+  '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/syarat-ketentuan': typeof SyaratKetentuanRoute
+  '/transaksi': typeof TransaksiRoute
+  '/api/buku': typeof ApiBukuRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/akun': typeof AkunRoute
+  '/daftar': typeof DaftarRoute
+  '/kebijakan-privasi': typeof KebijakanPrivasiRoute
+  '/live-chat': typeof LiveChatRoute
+  '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/syarat-ketentuan': typeof SyaratKetentuanRoute
+  '/transaksi': typeof TransaksiRoute
+  '/api/buku': typeof ApiBukuRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/akun': typeof AkunRoute
+  '/daftar': typeof DaftarRoute
+  '/kebijakan-privasi': typeof KebijakanPrivasiRoute
+  '/live-chat': typeof LiveChatRoute
+  '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/syarat-ketentuan': typeof SyaratKetentuanRoute
+  '/transaksi': typeof TransaksiRoute
+  '/api/buku': typeof ApiBukuRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/akun'
+    | '/daftar'
+    | '/kebijakan-privasi'
+    | '/live-chat'
+    | '/login'
+    | '/profile'
+    | '/syarat-ketentuan'
+    | '/transaksi'
+    | '/api/buku'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/akun'
+    | '/daftar'
+    | '/kebijakan-privasi'
+    | '/live-chat'
+    | '/login'
+    | '/profile'
+    | '/syarat-ketentuan'
+    | '/transaksi'
+    | '/api/buku'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/akun'
+    | '/daftar'
+    | '/kebijakan-privasi'
+    | '/live-chat'
+    | '/login'
+    | '/profile'
+    | '/syarat-ketentuan'
+    | '/transaksi'
+    | '/api/buku'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AkunRoute: typeof AkunRoute
+  DaftarRoute: typeof DaftarRoute
+  KebijakanPrivasiRoute: typeof KebijakanPrivasiRoute
+  LiveChatRoute: typeof LiveChatRoute
+  LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
+  SyaratKetentuanRoute: typeof SyaratKetentuanRoute
+  TransaksiRoute: typeof TransaksiRoute
+  ApiBukuRoute: typeof ApiBukuRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +182,91 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/akun': {
+      id: '/akun'
+      path: '/akun'
+      fullPath: '/akun'
+      preLoaderRoute: typeof AkunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daftar': {
+      id: '/daftar'
+      path: '/daftar'
+      fullPath: '/daftar'
+      preLoaderRoute: typeof DaftarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kebijakan-privasi': {
+      id: '/kebijakan-privasi'
+      path: '/kebijakan-privasi'
+      fullPath: '/kebijakan-privasi'
+      preLoaderRoute: typeof KebijakanPrivasiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-chat': {
+      id: '/live-chat'
+      path: '/live-chat'
+      fullPath: '/live-chat'
+      preLoaderRoute: typeof LiveChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/syarat-ketentuan': {
+      id: '/syarat-ketentuan'
+      path: '/syarat-ketentuan'
+      fullPath: '/syarat-ketentuan'
+      preLoaderRoute: typeof SyaratKetentuanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transaksi': {
+      id: '/transaksi'
+      path: '/transaksi'
+      fullPath: '/transaksi'
+      preLoaderRoute: typeof TransaksiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/buku': {
+      id: '/api/buku'
+      path: '/api/buku'
+      fullPath: '/api/buku'
+      preLoaderRoute: typeof ApiBukuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AkunRoute: AkunRoute,
+  DaftarRoute: DaftarRoute,
+  KebijakanPrivasiRoute: KebijakanPrivasiRoute,
+  LiveChatRoute: LiveChatRoute,
+  LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
+  SyaratKetentuanRoute: SyaratKetentuanRoute,
+  TransaksiRoute: TransaksiRoute,
+  ApiBukuRoute: ApiBukuRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
