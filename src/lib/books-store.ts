@@ -1,10 +1,8 @@
 import { Book } from '@/types/book';
 
-// In-memory server store for dynamic books
-// Starts empty by default so the home screen displays the "No books available yet" empty state
-// Admin users can dynamically upload, edit, delete, and manage books in real time.
-
-let dynamicBooks: Book[] = [];
+// Supabase-backed catalog store (table: public.books).
+// All reads/writes happen server-side through the service-role client, so the
+// catalog persists across server restarts and deployments.
 
 export interface BookFilterParams {
   keyword?: string;
@@ -15,7 +13,103 @@ export interface BookFilterParams {
   limit?: number;
 }
 
-export function getDynamicBooks(params: BookFilterParams = {}) {
+export interface CreateBookInput {
+  judul: string;
+  author: string;
+  genre: string;
+  category?: string;
+  deskripsi: string;
+  cover?: string;
+  content?: string;
+  pdfUrl?: string;
+  year?: string;
+  isbn?: string;
+  publisher?: string;
+  pages?: string;
+  language?: string;
+  length?: string;
+  width?: string;
+}
+
+type BookRow = {
+  id: string;
+  judul: string;
+  author: string;
+  genre: string;
+  category: string;
+  deskripsi: string;
+  cover: string;
+  content: string;
+  pdf_url: string;
+  year: string;
+  isbn: string;
+  publisher: string;
+  pages: string;
+  language: string;
+  length: string;
+  width: string;
+};
+
+async function db() {
+  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+  return supabaseAdmin;
+}
+
+function rowToBook(row: BookRow): Book {
+  return {
+    id: row.id,
+    judul: row.judul,
+    title: row.judul,
+    author: row.author || '',
+    genre: row.genre || 'General',
+    category: row.category || row.genre || 'General',
+    deskripsi: row.deskripsi || '',
+    cover: row.cover || '',
+    content: row.content || '',
+    pdfUrl: row.pdf_url || '',
+    year: row.year || '',
+    isbn: row.isbn || '',
+    publisher: row.publisher || '',
+    pages: row.pages || '',
+    language: row.language || 'Bahasa Indonesia',
+    length: row.length || '',
+    width: row.width || '',
+  };
+}
+
+function inputToRow(input: Partial<CreateBookInput>): Record<string, string> {
+  const row: Record<string, string> = {};
+  if (input.judul !== undefined) row['judul'] = String(input.judul).trim();
+  if (input.author !== undefined) row['author'] = String(input.author).trim();
+  if (input.genre !== undefined) row['genre'] = String(input.genre).trim();
+  if (input.category !== undefined) row['category'] = String(input.category).trim();
+  if (input.deskripsi !== undefined) row['deskripsi'] = String(input.deskripsi).trim();
+  if (input.cover !== undefined) row['cover'] = String(input.cover).trim();
+  if (input.content !== undefined) row['content'] = String(input.content);
+  if (input.pdfUrl !== undefined) row['pdf_url'] = String(input.pdfUrl);
+  if (input.year !== undefined) row['year'] = String(input.year).trim();
+  if (input.isbn !== undefined) row['isbn'] = String(input.isbn).trim();
+  if (input.publisher !== undefined) row['publisher'] = String(input.publisher).trim();
+  if (input.pages !== undefined) row['pages'] = String(input.pages).trim();
+  if (input.language !== undefined) row['language'] = String(input.language).trim();
+  if (input.length !== undefined) row['length'] = String(input.length).trim();
+  if (input.width !== undefined) row['width'] = String(input.width).trim();
+  return row;
+}
+
+async function fetchAllBooks(): Promise<Book[]> {
+  const supabase = await db();
+  const { data, error } = await supabase
+    .from('books')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(1000);
+
+  if (error) throw new Error(error.message);
+  return ((data as unknown as BookRow[]) || []).map(rowToBook);
+}
+
+export async function getDynamicBooks(params: BookFilterParams = {}) {
   const {
     keyword = '',
     genre = '',
@@ -25,9 +119,9 @@ export function getDynamicBooks(params: BookFilterParams = {}) {
     limit = 10,
   } = params;
 
-  let filtered = [...dynamicBooks];
+  const allBooks = await fetchAllBooks();
+  let filtered = [...allBooks];
 
-  // 1. Keyword search (title, author, genre, description, publisher, isbn)
   if (keyword.trim()) {
     const q = keyword.trim().toLowerCase();
     filtered = filtered.filter((b) => {
@@ -41,7 +135,6 @@ export function getDynamicBooks(params: BookFilterParams = {}) {
     });
   }
 
-  // 2. Genre / Category filtering
   if (genre && genre !== 'All' && genre !== 'All Genres') {
     const g = genre.toLowerCase();
     filtered = filtered.filter(
@@ -49,12 +142,10 @@ export function getDynamicBooks(params: BookFilterParams = {}) {
     );
   }
 
-  // 3. Year filtering
   if (year && year.trim()) {
     filtered = filtered.filter((b) => String(b.year) === year.trim());
   }
 
-  // 4. Sorting
   if (sort) {
     switch (sort) {
       case 'title_asc':
@@ -92,10 +183,9 @@ export function getDynamicBooks(params: BookFilterParams = {}) {
   const startIndex = (currentPage - 1) * limit;
   const paginatedBooks = filtered.slice(startIndex, startIndex + limit);
 
-  // Extract all distinct genres currently present in the dynamic catalog
   const availableGenres = Array.from(
     new Set(
-      dynamicBooks
+      allBooks
         .map((b) => b.genre || b.category)
         .filter((g): g is string => Boolean(g && g.trim()))
     )
@@ -107,57 +197,36 @@ export function getDynamicBooks(params: BookFilterParams = {}) {
     totalPages,
     currentPage,
     availableGenres,
-    totalCatalogCount: dynamicBooks.length,
+    totalCatalogCount: allBooks.length,
   };
 }
 
-export function getDynamicBookById(id: string): Book | undefined {
-  return dynamicBooks.find((b) => b.id === id);
+export async function getDynamicBookById(id: string): Promise<Book | undefined> {
+  const supabase = await db();
+  const { data, error } = await supabase.from('books').select('*').eq('id', id).maybeSingle();
+  if (error || !data) return undefined;
+  return rowToBook(data as unknown as BookRow);
 }
 
-export interface CreateBookInput {
-  judul: string;
-  author: string;
-  genre: string;
-  category?: string;
-  deskripsi: string;
-  cover?: string;
-  content?: string;
-  pdfUrl?: string;
-  year?: string;
-  isbn?: string;
-  publisher?: string;
-  pages?: string;
-  language?: string;
-  length?: string;
-  width?: string;
-}
-
-export function createDynamicBook(input: CreateBookInput): { success: boolean; book?: Book; error?: string } {
+export async function createDynamicBook(
+  input: CreateBookInput
+): Promise<{ success: boolean; book?: Book; error?: string }> {
   const judul = (input.judul || '').trim();
   const author = (input.author || '').trim();
   const genre = (input.genre || input.category || 'General').trim();
 
-  if (!judul) {
-    return { success: false, error: 'Book title (judul) is required' };
-  }
-  if (!author) {
-    return { success: false, error: 'Book author is required' };
-  }
+  if (!judul) return { success: false, error: 'Judul buku wajib diisi' };
+  if (!author) return { success: false, error: 'Nama penulis wajib diisi' };
 
-  const newId = `book-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-  
-  const newBook: Book = {
-    id: newId,
+  const payload = {
     judul,
-    title: judul,
     author,
     genre,
-    category: input.category || genre,
-    deskripsi: (input.deskripsi || '').trim() || 'No description provided for this ebook.',
+    category: (input.category || genre).trim(),
+    deskripsi: (input.deskripsi || '').trim() || 'Belum ada deskripsi untuk ebook ini.',
     cover: (input.cover || '').trim(),
     content: input.content || '',
-    pdfUrl: input.pdfUrl || '',
+    pdf_url: input.pdfUrl || '',
     year: input.year ? String(input.year).trim() : new Date().getFullYear().toString(),
     isbn: input.isbn ? String(input.isbn).trim() : '',
     publisher: input.publisher ? String(input.publisher).trim() : 'Independent Publishing',
@@ -167,60 +236,111 @@ export function createDynamicBook(input: CreateBookInput): { success: boolean; b
     width: input.width ? String(input.width).trim() : '14 cm',
   };
 
-  // Prepend so newly uploaded books appear first
-  dynamicBooks = [newBook, ...dynamicBooks];
+  const supabase = await db();
+  const { data, error } = await supabase
+    .from('books')
+    .insert(payload as never)
+    .select('*')
+    .single();
 
-  return { success: true, book: newBook };
-}
-
-export function updateDynamicBook(id: string, input: Partial<CreateBookInput>): { success: boolean; book?: Book; error?: string } {
-  const index = dynamicBooks.findIndex((b) => b.id === id);
-  if (index === -1) {
-    return { success: false, error: `Book with id ${id} not found` };
+  if (error || !data) {
+    return { success: false, error: error?.message || 'Gagal menyimpan buku ke database' };
   }
 
-  const current = dynamicBooks[index];
-  const updated: Book = {
-    ...current,
-    judul: input.judul !== undefined ? input.judul.trim() : current.judul,
-    title: input.judul !== undefined ? input.judul.trim() : current.title,
-    author: input.author !== undefined ? input.author.trim() : current.author,
-    genre: input.genre !== undefined ? input.genre.trim() : current.genre,
-    category: input.category !== undefined ? input.category.trim() : input.genre !== undefined ? input.genre.trim() : current.category,
-    deskripsi: input.deskripsi !== undefined ? input.deskripsi.trim() : current.deskripsi,
-    cover: input.cover !== undefined ? input.cover.trim() : current.cover,
-    content: input.content !== undefined ? input.content : current.content,
-    pdfUrl: input.pdfUrl !== undefined ? input.pdfUrl : current.pdfUrl,
-    year: input.year !== undefined ? String(input.year).trim() : current.year,
-    isbn: input.isbn !== undefined ? String(input.isbn).trim() : current.isbn,
-    publisher: input.publisher !== undefined ? String(input.publisher).trim() : current.publisher,
-    pages: input.pages !== undefined ? String(input.pages).trim() : current.pages,
-    language: input.language !== undefined ? String(input.language).trim() : current.language,
-    length: input.length !== undefined ? String(input.length).trim() : current.length,
-    width: input.width !== undefined ? String(input.width).trim() : current.width,
-  };
-
-  dynamicBooks[index] = updated;
-  return { success: true, book: updated };
+  return { success: true, book: rowToBook(data as unknown as BookRow) };
 }
 
-export function deleteDynamicBook(id: string): { success: boolean; error?: string } {
-  const initialLength = dynamicBooks.length;
-  dynamicBooks = dynamicBooks.filter((b) => b.id !== id);
-  if (dynamicBooks.length === initialLength) {
-    return { success: false, error: `Book with id ${id} not found` };
+export async function updateDynamicBook(
+  id: string,
+  input: Partial<CreateBookInput>
+): Promise<{ success: boolean; book?: Book; error?: string }> {
+  const patch = inputToRow(input);
+  if (patch['judul'] !== undefined && !patch['judul']) {
+    return { success: false, error: 'Judul buku tidak boleh kosong' };
+  }
+  if (patch['genre'] && input.category === undefined) {
+    patch['category'] = patch['genre'];
+  }
+
+  const supabase = await db();
+  const { data, error } = await supabase
+    .from('books')
+    .update(patch as never)
+    .eq('id', id)
+    .select('*')
+    .maybeSingle();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: `Buku dengan id ${id} tidak ditemukan` };
+
+  return { success: true, book: rowToBook(data as unknown as BookRow) };
+}
+
+export async function deleteDynamicBook(
+  id: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await db();
+  const { data, error } = await supabase.from('books').delete().eq('id', id).select('id');
+  if (error) return { success: false, error: error.message };
+  if (!data || data.length === 0) {
+    return { success: false, error: `Buku dengan id ${id} tidak ditemukan` };
   }
   return { success: true };
 }
 
-export function clearAllDynamicBooks(): { success: boolean; count: number } {
-  const count = dynamicBooks.length;
-  dynamicBooks = [];
-  return { success: true, count };
+export async function clearAllDynamicBooks(): Promise<{ success: boolean; count: number }> {
+  const supabase = await db();
+  const { data, error } = await supabase
+    .from('books')
+    .delete()
+    .not('id', 'is', null)
+    .select('id');
+  if (error) throw new Error(error.message);
+  return { success: true, count: data?.length || 0 };
 }
 
-export function syncClientBooks(books: Book[]): void {
-  if (Array.isArray(books)) {
-    dynamicBooks = [...books];
-  }
+/**
+ * Import books coming from a client-side cache into the database.
+ * Existing rows are matched by title + author so repeated syncs don't duplicate.
+ */
+export async function syncClientBooks(books: Book[]): Promise<{ inserted: number }> {
+  if (!Array.isArray(books) || books.length === 0) return { inserted: 0 };
+
+  const existing = await fetchAllBooks();
+  const seen = new Set(
+    existing.map((b) => `${(b.judul || '').toLowerCase()}|${(b.author || '').toLowerCase()}`)
+  );
+
+  const toInsert = books
+    .filter((b) => {
+      const key = `${(b.judul || b.title || '').toLowerCase()}|${(b.author || '').toLowerCase()}`;
+      if (!b.judul && !b.title) return false;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map((b) => ({
+      judul: (b.judul || b.title || '').trim(),
+      author: (b.author || '').trim(),
+      genre: (b.genre || b.category || 'General').trim(),
+      category: (b.category || b.genre || 'General').trim(),
+      deskripsi: b.deskripsi || '',
+      cover: b.cover || '',
+      content: b.content || '',
+      pdf_url: b.pdfUrl || '',
+      year: b.year ? String(b.year) : '',
+      isbn: b.isbn || '',
+      publisher: b.publisher || '',
+      pages: b.pages ? String(b.pages) : '',
+      language: b.language || 'Bahasa Indonesia',
+      length: b.length || '',
+      width: b.width || '',
+    }));
+
+  if (toInsert.length === 0) return { inserted: 0 };
+
+  const supabase = await db();
+  const { error } = await supabase.from('books').insert(toInsert as never);
+  if (error) throw new Error(error.message);
+  return { inserted: toInsert.length };
 }
