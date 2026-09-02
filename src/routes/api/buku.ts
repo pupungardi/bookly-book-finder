@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/buku")({
           const page = parseInt(url.searchParams.get("page") || "1", 10);
           const limit = parseInt(url.searchParams.get("limit") || "10", 10);
 
-          const result = getDynamicBooks({
+          const result = await getDynamicBooks({
             keyword: url.searchParams.get("keyword")?.trim() || "",
             genre: url.searchParams.get("genre")?.trim() || "",
             sort: url.searchParams.get("sort")?.trim() || "",
@@ -71,11 +71,11 @@ export const Route = createFileRoute("/api/buku")({
                 syncAuth.statusCode,
               );
             }
-            syncClientBooks(body.books);
+            const { inserted } = await syncClientBooks(body.books);
             return json({
               success: true,
-              message: "Katalog berhasil disinkronisasikan",
-              count: body.books.length,
+              message: "Katalog berhasil disinkronisasikan ke database",
+              count: inserted,
             });
           }
 
@@ -87,7 +87,7 @@ export const Route = createFileRoute("/api/buku")({
                 deleteAuth.statusCode,
               );
             }
-            const { count } = clearAllDynamicBooks();
+            const { count } = await clearAllDynamicBooks();
             return json({
               success: true,
               message: `Berhasil membersihkan ${count} buku dari katalog dinamis`,
@@ -119,7 +119,7 @@ export const Route = createFileRoute("/api/buku")({
             return json({ success: false, error: "Nama penulis wajib diisi." }, 400);
           }
 
-          const result = createDynamicBook(input);
+          const result = await createDynamicBook(input);
           if (!result.success) {
             return json({ success: false, error: result.error }, 400);
           }
@@ -165,7 +165,7 @@ export const Route = createFileRoute("/api/buku")({
             );
           }
 
-          const result = updateDynamicBook(body.id, body);
+          const result = await updateDynamicBook(body.id, body);
           if (!result.success) {
             return json({ success: false, error: result.error }, 404);
           }
@@ -208,7 +208,7 @@ export const Route = createFileRoute("/api/buku")({
             );
           }
 
-          const result = deleteDynamicBook(id);
+          const result = await deleteDynamicBook(id);
           if (!result.success) {
             return json({ success: false, error: result.error }, 404);
           }
